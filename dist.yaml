@@ -3,6 +3,11 @@ info:
   title: User Microservice API
   description: User Microservice API to demostrate CDD
   version: 1.0.0
+  x-logo:
+    url: >-
+      https://davincipayments.s3.amazonaws.com/public/swift/prod/Uploads/APi_Icon_Gif.gif
+    backgroundColor: '#FFFFFF'
+    altText: User API
   contact:
     name: Kamran Manzoor
     email: kamran.manzoor@maersk.com
