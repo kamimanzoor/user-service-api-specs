@@ -20,7 +20,7 @@ tags:
   - name: users
     description: Users API
 paths:
-  '/users/{id}':
+  '/user/{id}':
     get:
       summary: Returns the user with the given ID
       description: Returns the user with the given ID

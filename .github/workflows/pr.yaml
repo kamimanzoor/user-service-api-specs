@@ -28,6 +28,11 @@ jobs:
       run: |
         cat openapi/openapi.yaml
         npm test
+    
+    - name: Bundle file
+      working-directory: head
+      run: |
+        npm run build
 
     - name: Run OpenAPI Diff (from HEAD rev)
       uses: docker://openapitools/openapi-diff:latest 
