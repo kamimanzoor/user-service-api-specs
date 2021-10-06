@@ -25,7 +25,9 @@ jobs:
 
     - name: Npm test
       working-directory: base
-      run: npm test
+      run: |
+        cat openapi/openapi.yaml
+        npm test
 
     - name: Run OpenAPI Diff (from HEAD rev)
       uses: docker://openapitools/openapi-diff:latest 
