@@ -20,11 +20,11 @@ jobs:
         node-version: '14'
 
     - name: Npm install
-      working-directory: base
+      working-directory: head
       run: npm install    
 
     - name: Npm test
-      working-directory: base
+      working-directory: head
       run: |
         cat openapi/openapi.yaml
         npm test
