@@ -20,14 +20,21 @@ jobs:
         node-version: '14'
 
     - name: Npm install
-      working-directory: base
+      working-directory: head
       run: npm install    
 
     - name: Npm test
-      working-directory: base
-      run: npm test
+      working-directory: head
+      run: |
+        cat openapi/openapi.yaml
+        npm test
+    
+    - name: Bundle file
+      working-directory: head
+      run: |
+        npm run build
 
     - name: Run OpenAPI Diff (from HEAD rev)
       uses: docker://openapitools/openapi-diff:latest 
       with:
-        args: --fail-on-incompatible head/openapi.yaml base/openapi.yaml
+        args: --fail-on-incompatible base/openapi.yaml head/openapi.yaml 
