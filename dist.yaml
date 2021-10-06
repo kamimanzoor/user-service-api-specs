@@ -1,0 +1,148 @@
+openapi: 3.0.1
+info:
+  title: User Microservice API
+  description: User Microservice API to demostrate CDD
+  version: 1.0.0
+  contact:
+    name: Kamran Manzoor
+    email: kamran.manzoor@maersk.com
+  license:
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
+servers:
+  - url: /api/v1
+tags:
+  - name: users
+    description: Users API
+paths:
+  '/users/{id}':
+    get:
+      summary: Returns the user with the given ID
+      description: Returns the user with the given ID
+      operationId: getUserById
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          description: ID of the user
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid id supplied
+          content: {}
+        '404':
+          description: User not found
+          content: {}
+  '/users/{id}/orders':
+    get:
+      summary: Returns the orders of a user with the given ID
+      description: Returns the orders of a user with the given ID
+      operationId: getOrdersByUserId
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          description: ID of the user
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid id supplied
+          content: {}
+        '404':
+          description: User not found
+          content: {}
+  /users:
+    post:
+      summary: Creates a user with the given payload
+      description: Creates a user with the given payload
+      operationId: createUser
+      tags:
+        - users
+      requestBody:
+        description: Created user object
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid payload
+          content: {}
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        lastModified:
+          type: string
+          format: date-time
+        address:
+          type: object
+          properties:
+            streetName:
+              type: string
+            houseNum:
+              type: string
+            floor:
+              type: string
+            postcode:
+              type: string
+            city:
+              type: string
+            country:
+              type: string
+          required:
+            - text
+            - lastModified
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              item:
+                type: string
+              quantity:
+                type: integer
+      required:
+        - id
