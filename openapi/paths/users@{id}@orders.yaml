@@ -19,7 +19,7 @@ get:
           schema:
             type: array
             items:
-              $ref: ..\components\schemas\Order.yaml
+              $ref: ../components/schemas/Order.yaml
     '400':
       description: Invalid id supplied
       content: {}
