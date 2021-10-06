@@ -1,0 +1,29 @@
+type: object
+properties:
+  id:
+    type: string
+  firstName:
+    type: string
+  lastName:
+    type: string
+  lastModified:
+    type: string
+    format: date-time
+  address:
+    type: object
+    properties:
+      streetName:
+        type: string
+      houseNum:
+        type: string
+      floor:
+        type: string
+      postcode:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+    required:
+      - text
+      - lastModified

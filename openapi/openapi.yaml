@@ -1,0 +1,23 @@
+openapi: 3.0.1
+info:
+  title: User Microservice API
+  description: User Microservice API to demostrate CDD
+  version: 1.0.0
+  contact:
+    name: Kamran Manzoor
+    email: kamran.manzoor@maersk.com
+  license:
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
+servers:
+  - url: /api/v1
+tags:
+  - name: users
+    description: Users API
+paths:
+  '/users/{id}':
+    $ref: 'paths\users@{id}.yaml'
+  '/users/{id}/orders':
+    $ref: 'paths\users@{id}@orders.yaml'
+  /users:
+    $ref: paths\users.yaml

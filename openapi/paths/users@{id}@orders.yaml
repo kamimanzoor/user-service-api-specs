@@ -1,0 +1,28 @@
+get:
+  summary: Returns the orders of a user with the given ID
+  description: Returns the orders of a user with the given ID
+  operationId: getOrdersByUserId
+  tags:
+    - users
+  parameters:
+    - name: id
+      in: path
+      description: ID of the user
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ..\components\schemas\Order.yaml
+    '400':
+      description: Invalid id supplied
+      content: {}
+    '404':
+      description: User not found
+      content: {}

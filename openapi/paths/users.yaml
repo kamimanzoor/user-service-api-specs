@@ -1,0 +1,23 @@
+post:
+  summary: Creates a user with the given payload
+  description: Creates a user with the given payload
+  operationId: createUser
+  tags:
+    - users
+  requestBody:
+    description: Created user object
+    content:
+      '*/*':
+        schema:
+          $ref: ..\components\schemas\User.yaml
+    required: true
+  responses:
+    '201':
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ..\components\schemas\User.yaml
+    '400':
+      description: Invalid payload
+      content: {}

@@ -1,0 +1,18 @@
+type: object
+properties:
+  id:
+    type: string
+  date:
+    type: string
+    format: date-time
+  items:
+    type: array
+    items:
+      type: object
+      properties:
+        item:
+          type: string
+        quantity:
+          type: integer
+required:
+  - id
