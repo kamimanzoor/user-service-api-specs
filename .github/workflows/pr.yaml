@@ -28,7 +28,12 @@ jobs:
       run: |
         cat openapi/openapi.yaml
         npm test
-    
+    - name: Debug
+      run: |
+        echo "Head"
+        cat head/openapi.yaml
+        echo "Base"
+        cat base/openapi.yaml
     - name: Bundle file
       working-directory: head
       run: |
