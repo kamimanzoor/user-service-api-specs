@@ -23,5 +23,7 @@ paths:
     $ref: 'paths/users@{id}.yaml'
   '/users/{id}/orders':
     $ref: 'paths/users@{id}@orders.yaml'
+  '/users/{id}/orders/{orderId}':
+    $ref: 'paths/users@{id}@orders@{orderId}.yaml'
   /users:
     $ref: paths/users.yaml
