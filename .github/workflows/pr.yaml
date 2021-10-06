@@ -37,4 +37,4 @@ jobs:
     - name: Run OpenAPI Diff (from HEAD rev)
       uses: docker://openapitools/openapi-diff:latest 
       with:
-        args: --fail-on-incompatible head/openapi.yaml base/openapi.yaml
+        args: --fail-on-incompatible base/openapi.yaml head/openapi.yaml 
