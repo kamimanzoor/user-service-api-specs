@@ -19,7 +19,7 @@ tags:
   - name: users
     description: Users API
 paths:
-  '/users/{id}':
+  '/user/{id}':
     $ref: 'paths/users@{id}.yaml'
   '/users/{id}/orders':
     $ref: 'paths/users@{id}@orders.yaml'
