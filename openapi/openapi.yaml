@@ -20,8 +20,8 @@ tags:
     description: Users API
 paths:
   '/users/{id}':
-    $ref: 'paths\users@{id}.yaml'
+    $ref: 'paths/users@{id}.yaml'
   '/users/{id}/orders':
-    $ref: 'paths\users@{id}@orders.yaml'
+    $ref: 'paths/users@{id}@orders.yaml'
   /users:
-    $ref: paths\users.yaml
+    $ref: paths/users.yaml
