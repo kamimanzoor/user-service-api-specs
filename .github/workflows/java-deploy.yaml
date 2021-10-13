@@ -1,0 +1,185 @@
+name: java-CD
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy"
+        required: true
+      timeout:
+        description: "Timeout to deploy"
+        # default value of timeout is set
+        # on Deploy to env step
+      envs:
+        description: "Environments. Use comma separated string for more than 1 value. Options: dev, prod"
+        required: true
+  release:
+    types: [published]
+
+jobs:
+  set-clusters:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set Env Vars
+        id: set-env-vars
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+          {
+            echo "VERSION=${{ github.event.release.tag_name }}"
+            echo "GIT_REF=refs/tags/${{ github.event.release.tag_name }}"
+            echo "ENVS_TO_DEPLOY=dev, prod"
+          } >> "$GITHUB_ENV"
+          fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          {
+            version=${{ github.event.inputs.version }}
+            git_ref=$([[ "$version" == *"SNAPSHOT"* ]] && echo "${{ github.ref }}" || echo "refs/tags/${{ github.event.inputs.version }}")
+            echo "VERSION=$version"
+            echo "GIT_REF=$git_ref"
+            echo "ENVS_TO_DEPLOY=${{ github.event.inputs.envs }}"
+          } >> "$GITHUB_ENV"
+          fi
+
+      - name: Set Matrix
+        id: set-matrix
+        run: |
+          declare -A env_conf=(
+            ['dev']="{\"cluster\":\"core-dev-west-1\",\"env\":\"dev\",\"namespace\":\"alice-dev\",\"version\":\"${{ env.VERSION }}\",\"git_ref\":\"${{ env.GIT_REF }}\"}"
+            ['prod']="{\"cluster\":\"core-dev-west-1\",\"env\":\"prod\",\"namespace\":\"alice-staging\",\"version\":\"${{ env.VERSION }}\",\"git_ref\":\"${{ env.GIT_REF }}\"}"
+          )
+          deploy_jobs=$(for i in $(echo "${{ env.ENVS_TO_DEPLOY }}" | sed "s/,/ /g"); do echo "${env_conf[$i]},"; done)
+          deploy_jobs="${deploy_jobs/%,/}"
+          echo "$deploy_jobs"
+          matrix=$( (
+            echo "{ \"include\" : "
+            echo "[${deploy_jobs}]"
+            echo "}"
+          ) | jq -c .)
+          echo "$matrix"
+          echo "$matrix" | jq .
+          echo "::set-output name=matrix::$matrix"
+
+  release:
+    needs:
+      - set-clusters
+    timeout-minutes: 10
+    name: deploy
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.set-clusters.outputs.matrix)}}
+    environment: ${{ matrix.env }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ matrix.git_ref }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v1
+        id: install
+
+      - name: Import Secrets
+        uses: hashicorp/vault-action@v2.0.1
+        id: k8ssecrets
+        with:
+          url: https://vault.maersk-digital.net
+          tlsSkipVerify: false
+          exportEnv: false
+          method: approle
+          roleId: ${{ secrets.VAULT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_ROLE_SECRET_ID }}
+          secrets: |
+            alice-kv/data/kubernetes/${{ matrix.cluster }}/cert cert;
+            alice-kv/data/kubernetes/${{ matrix.cluster }}/token token;
+            alice-kv/data/kubernetes/${{ matrix.cluster }}/server server;
+
+      - name: Set Kubernetes Cluster Context For ${{ matrix.cluster }}
+        run: |
+          kubectl config set-credentials default --token=${{ steps.k8ssecrets.outputs.token }};
+          echo ${{ steps.k8ssecrets.outputs.cert }} | base64 -d > ./kubectl-ca.crt;
+          kubectl config set-cluster default --server=${{ steps.k8ssecrets.outputs.server }} --certificate-authority=./kubectl-ca.crt;
+          kubectl config set-context default --cluster=default --user=default --namespace=${{ matrix.namespace }};
+          kubectl config use-context default;
+
+      - name: Deploy to env ${{ matrix.env }}
+        run: |
+          timeout="${{ github.event.inputs.timeout }}"
+          if [[ ${timeout} == "" ]]
+          then
+            timeout="300s"
+          fi
+
+          helm upgrade --dry-run \
+                       --install ${{ github.event.repository.name }} ./k8s/chart \
+                       --wait --timeout "${timeout}" \
+                       --namespace ${{ matrix.namespace }} \
+                       --set-string deploy.name="${{ github.event.repository.name }}" \
+                       --set-string image.version="${{ matrix.version }}" \
+                       --set-string deploy.github.repository="${{ github.event.repository.name }}" \
+                       --set-string deploy.github.workflowId="${GITHUB_RUN_ID}" \
+                       -f ./k8s/envs/${{ matrix.env }}.yaml || \
+          result_code=$?
+
+          if (( result_code > 0 ))
+          then
+            echo "deployment dry-run has failed, take a look on helm params (could be empty placeholders)"
+            exit $result_code 
+          fi
+
+          helm upgrade --install ${{ github.event.repository.name }} ./k8s/chart \
+                       --wait --timeout "${timeout}" \
+                       --namespace ${{ matrix.namespace }} \
+                       --set-string deploy.name="${{ github.event.repository.name }}" \
+                       --set-string image.version="${{ matrix.version }}" \
+                       --set-string deploy.github.repository="${{ github.event.repository.name }}" \
+                       --set-string deploy.github.workflowId="${GITHUB_RUN_ID}" \
+                       -f ./k8s/envs/${{ matrix.env }}.yaml || \
+          result_code=$?
+
+          if (( result_code > 0 ))
+          then
+            echo "deployment has failed, we need to rollback"
+            helm rollback ${{ github.event.repository.name }} 
+
+            exit $result_code 
+          fi
+
+          helm test ${{ github.event.repository.name }} || \
+          result_code=$?
+
+          if (( result_code > 0 ))
+          then
+            echo "helm tests have failed, we need to rollback"
+            helm rollback ${{ github.event.repository.name }} 
+
+            exit $result_code 
+          fi
+
+  cicd-stats:
+    if: always()
+    needs:
+      - set-clusters
+      - release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger stat client
+        run: |
+          curl -v \
+               -H "Authorization: token ${{ secrets.GH_SA_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               -X POST \
+               "https://api.github.com/repos/${{ github.repository }}/actions/workflows/stat-client.yaml/dispatches" \
+               -d  "{
+                      \"ref\":\"main\",
+                      \"inputs\":{
+                        \"repo\":\"${{ github.event.repository.name }}\",
+                        \"ref\":\"${{ github.ref }}\",
+                        \"action\":\"push\",
+                        \"label\":\"cd\",
+                        \"runid\":\"${{ github.run_id }}\"
+                      }
+                    }"
+        env:
+          HEAD_REF: ${{ github.head_ref }}
