@@ -81,7 +81,7 @@ jobs:
         id: install
 
       - name: Import Secrets
-        uses: hashicorp/vault-action@v2.0.1
+        uses: hashicorp/vault-action@v2.4.0
         id: k8ssecrets
         with:
           url: https://vault.maersk-digital.net
