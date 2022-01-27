@@ -77,7 +77,7 @@ jobs:
           ref: ${{ matrix.git_ref }}
 
       - name: Setup Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@v2.0
         id: install
 
       - name: Import Secrets
