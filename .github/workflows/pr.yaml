@@ -15,7 +15,7 @@ jobs:
       with:
         ref: ${{ github.base_ref }}
         path: base
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3.5.0
       with:
         node-version: '14'
 
